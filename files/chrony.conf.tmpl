@@ -1,0 +1,293 @@
+# This file is managed by mgmt. Do not edit.
+{{/* Time sources */ -}}
+{{ range .Server -}}
+server{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Pool -}}
+pool{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Peer -}}
+peer{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Initstepslew -}}
+initstepslew {{ .Initstepslew }}
+{{ end -}}
+{{ range .Refclock -}}
+refclock{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Manual -}}
+manual
+{{ end -}}
+{{ if .Acquisitionport -}}
+acquisitionport {{ .Acquisitionport }}
+{{ end -}}
+{{ range .Bindacqaddress -}}
+bindacqaddress{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Bindacqdevice -}}
+bindacqdevice {{ .Bindacqdevice }}
+{{ end -}}
+{{ if .Dscp -}}
+dscp {{ .Dscp }}
+{{ end -}}
+{{ if .Dumpdir -}}
+dumpdir {{ .Dumpdir }}
+{{ end -}}
+{{ if .Maxsamples -}}
+maxsamples {{ .Maxsamples }}
+{{ end -}}
+{{ if .Minsamples -}}
+minsamples {{ .Minsamples }}
+{{ end -}}
+{{ if .Ntsaeads -}}
+ntsaeads {{ .Ntsaeads }}
+{{ end -}}
+{{ if .Ntsdumpdir -}}
+ntsdumpdir {{ .Ntsdumpdir }}
+{{ end -}}
+{{ if .Ntsrefresh -}}
+ntsrefresh {{ .Ntsrefresh }}
+{{ end -}}
+{{ range .Ntstrustedcerts -}}
+ntstrustedcerts{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Nosystemcert -}}
+nosystemcert
+{{ end -}}
+{{ if .Nocerttimecheck -}}
+nocerttimecheck {{ .Nocerttimecheck }}
+{{ end -}}
+{{ if .Refresh -}}
+refresh {{ .Refresh }}
+{{ end -}}
+{{/* Source selection */ -}}
+{{ if .Authselectmode -}}
+authselectmode {{ .Authselectmode }}
+{{ end -}}
+{{ if .Combinelimit -}}
+combinelimit {{ .Combinelimit }}
+{{ end -}}
+{{ if .Maxdistance -}}
+maxdistance {{ .Maxdistance }}
+{{ end -}}
+{{ if .Maxjitter -}}
+maxjitter {{ .Maxjitter }}
+{{ end -}}
+{{ if .Maxstratum -}}
+maxstratum {{ .Maxstratum }}
+{{ end -}}
+{{ if .Minstratum -}}
+minstratum {{ .Minstratum }}
+{{ end -}}
+{{ if .Minsources -}}
+minsources {{ .Minsources }}
+{{ end -}}
+{{ if .Reselectdist -}}
+reselectdist {{ .Reselectdist }}
+{{ end -}}
+{{ if .Stratumweight -}}
+stratumweight {{ .Stratumweight }}
+{{ end -}}
+{{/* System clock */ -}}
+{{ if .Clockprecision -}}
+clockprecision {{ .Clockprecision }}
+{{ end -}}
+{{ if .Corrtimeratio -}}
+corrtimeratio {{ .Corrtimeratio }}
+{{ end -}}
+{{ if .Driftfile -}}
+driftfile {{ .Driftfile }}
+{{ end -}}
+{{ if .Fallbackdrift -}}
+fallbackdrift {{ .Fallbackdrift }}
+{{ end -}}
+{{ if .Leapsecmode -}}
+leapsecmode {{ .Leapsecmode }}
+{{ end -}}
+{{ if .Leapsectz -}}
+leapsectz {{ .Leapsectz }}
+{{ end -}}
+{{ if .Leapseclist -}}
+leapseclist {{ .Leapseclist }}
+{{ end -}}
+{{ if .Makestep -}}
+makestep {{ .Makestep }}
+{{ end -}}
+{{ if .Maxchange -}}
+maxchange {{ .Maxchange }}
+{{ end -}}
+{{ if .Maxclockerror -}}
+maxclockerror {{ .Maxclockerror }}
+{{ end -}}
+{{ if .Maxdrift -}}
+maxdrift {{ .Maxdrift }}
+{{ end -}}
+{{ if .Maxupdateskew -}}
+maxupdateskew {{ .Maxupdateskew }}
+{{ end -}}
+{{ if .Maxslewrate -}}
+maxslewrate {{ .Maxslewrate }}
+{{ end -}}
+{{/* NTP server */ -}}
+{{ range .Allow -}}
+allow{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Deny -}}
+deny{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Bindaddress -}}
+bindaddress{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Binddevice -}}
+binddevice {{ .Binddevice }}
+{{ end -}}
+{{ range .Broadcast -}}
+broadcast{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Clientloglimit -}}
+clientloglimit {{ .Clientloglimit }}
+{{ end -}}
+{{ if .Noclientlog -}}
+noclientlog
+{{ end -}}
+{{ if .Local -}}
+local {{ .Local }}
+{{ end -}}
+{{ if .Ntpsigndsocket -}}
+ntpsigndsocket {{ .Ntpsigndsocket }}
+{{ end -}}
+{{ if .Ntsport -}}
+ntsport {{ .Ntsport }}
+{{ end -}}
+{{ if .Ntsservercert -}}
+ntsservercert {{ .Ntsservercert }}
+{{ end -}}
+{{ if .Ntsserverkey -}}
+ntsserverkey {{ .Ntsserverkey }}
+{{ end -}}
+{{ if .Ntsprocesses -}}
+ntsprocesses {{ .Ntsprocesses }}
+{{ end -}}
+{{ if .Maxntsconnections -}}
+maxntsconnections {{ .Maxntsconnections }}
+{{ end -}}
+{{ if .Ntsntpserver -}}
+ntsntpserver {{ .Ntsntpserver }}
+{{ end -}}
+{{ if .Ntsrotate -}}
+ntsrotate {{ .Ntsrotate }}
+{{ end -}}
+{{ if .Port -}}
+port {{ .Port }}
+{{ end -}}
+{{ if .Ratelimit -}}
+ratelimit {{ .Ratelimit }}
+{{ end -}}
+{{ if .Ntsratelimit -}}
+ntsratelimit {{ .Ntsratelimit }}
+{{ end -}}
+{{ if .Smoothtime -}}
+smoothtime {{ .Smoothtime }}
+{{ end -}}
+{{/* Command and monitoring access */ -}}
+{{ range .Bindcmdaddress -}}
+bindcmdaddress{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Bindcmddevice -}}
+bindcmddevice {{ .Bindcmddevice }}
+{{ end -}}
+{{ range .Cmdallow -}}
+cmdallow{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Cmddeny -}}
+cmddeny{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Cmdport -}}
+cmdport {{ .Cmdport }}
+{{ end -}}
+{{ if .Cmdratelimit -}}
+cmdratelimit {{ .Cmdratelimit }}
+{{ end -}}
+{{ if .Opencommands -}}
+opencommands {{ .Opencommands }}
+{{ end -}}
+{{/* Real-time clock (RTC) */ -}}
+{{ if .Hwclockfile -}}
+hwclockfile {{ .Hwclockfile }}
+{{ end -}}
+{{ if .Rtcautotrim -}}
+rtcautotrim {{ .Rtcautotrim }}
+{{ end -}}
+{{ if .Rtcdevice -}}
+rtcdevice {{ .Rtcdevice }}
+{{ end -}}
+{{ if .Rtcfile -}}
+rtcfile {{ .Rtcfile }}
+{{ end -}}
+{{ if .Rtconutc -}}
+rtconutc
+{{ end -}}
+{{ if .Rtcsync -}}
+rtcsync
+{{ end -}}
+{{/* Logging */ -}}
+{{ if .Log -}}
+log {{ .Log }}
+{{ end -}}
+{{ if .Logbanner -}}
+logbanner {{ .Logbanner }}
+{{ end -}}
+{{ if .Logchange -}}
+logchange {{ .Logchange }}
+{{ end -}}
+{{ if .Logdir -}}
+logdir {{ .Logdir }}
+{{ end -}}
+{{ if .Mailonchange -}}
+mailonchange {{ .Mailonchange }}
+{{ end -}}
+{{/* Miscellaneous */ -}}
+{{ range .Sourcedir -}}
+sourcedir{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Hwtimestamp -}}
+hwtimestamp{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ if .Hwtstimeout -}}
+hwtstimeout {{ .Hwtstimeout }}
+{{ end -}}
+{{ if .Maxtxbuffers -}}
+maxtxbuffers {{ .Maxtxbuffers }}
+{{ end -}}
+{{ if .Keyfile -}}
+keyfile {{ .Keyfile }}
+{{ end -}}
+{{ if .Lock_all -}}
+lock_all
+{{ end -}}
+{{ if .Pidfile -}}
+pidfile {{ .Pidfile }}
+{{ end -}}
+{{ if .Ptpport -}}
+ptpport {{ .Ptpport }}
+{{ end -}}
+{{ if .Ptpdomain -}}
+ptpdomain {{ .Ptpdomain }}
+{{ end -}}
+{{ if .Sched_priority -}}
+sched_priority {{ .Sched_priority }}
+{{ end -}}
+{{ if .User -}}
+user {{ .User }}
+{{ end -}}
+{{/* Anything not a 4.9 directive: name, then arguments if any */ -}}
+{{ range $k, $v := .Custom -}}
+{{ $k }}{{ if $v }} {{ $v }}{{ end }}
+{{ end -}}
+{{/* Included files last, so they take precedence */ -}}
+{{ range .Confdir -}}
+confdir{{ if . }} {{ . }}{{ end }}
+{{ end -}}
+{{ range .Includes -}}
+include{{ if . }} {{ . }}{{ end }}
+{{ end -}}

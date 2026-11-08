@@ -1,0 +1,17 @@
+# Editors
+.*.sw[a-p]
+*~
+\#*\#
+.\#*
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+._*
+
+# A module path created next to the examples, if run with --module-path here
+/modules/
+
+# Notes about a contributor's own machine; nothing local belongs in the repo
+/LOCAL.md

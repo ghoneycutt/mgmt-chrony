@@ -1,0 +1,11 @@
+# This file is managed by mgmt. Do not edit.
+pool 2.fedora.pool.ntp.org iburst
+ntsdumpdir /var/lib/chrony
+driftfile /var/lib/chrony/drift
+leapseclist /usr/share/zoneinfo/leap-seconds.list
+makestep 1.0 3
+allow 127.0.0.1
+local stratum 10
+rtcsync
+logdir /var/log/chrony
+sourcedir /run/chrony-dhcp

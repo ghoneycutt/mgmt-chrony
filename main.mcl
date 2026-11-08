@@ -1,0 +1,560 @@
+# mgmt-chrony: configure chrony, the NTP client and server.
+#
+# The class takes one struct with two kinds of fields:
+#
+#   - module options at the top level, all optional: package, package_state,
+#     config_file, config_file_owner, config_file_group, config_file_mode,
+#     service, service_state, service_startup, retry, delay.
+#   - config_options: a struct with one field per directive of chrony.conf(5)
+#     for chrony 4.9, named identically (except `includes` for the `include`
+#     directive, a reserved word in mcl), plus `custom` for anything else.
+#     See https://chrony-project.org/doc/4.9/chrony.conf.html. A directive
+#     that may be given more than once is a []str, one line per element
+#     holding the directive's arguments. A directive given at most once is a
+#     str holding its arguments; "" omits it. A directive without arguments
+#     is a bool. `custom` is a map of directive name to argument text.
+#
+# Every field inside config_options is optional, but config_options itself
+# must be passed: mgmt 1.1.0 cannot default a nested struct, and an inline
+# `struct{}` is rejected as ambiguous. For the defaults, pass a typed empty
+# struct: `$defaults struct{} = struct{}` then `config_options => $defaults`.
+#
+# (Note for readers of upstream master: the default operator was renamed
+# from || to <|> in August 2026, after the 1.1.0 release this repo builds.)
+
+import "deploy"
+import "golang"
+import "os"
+
+# Vanilla distribution defaults, one entry per distro and major version, keyed
+# "<ID>-<VERSION_ID>" from /etc/os-release. Each entry is what a fresh install
+# of that release ships in its chrony.conf, comments and blank lines aside,
+# taken from the real distribution package named in the comment and stored in
+# ci/fixtures/defaults/, never typed from memory. With no directives set, the
+# module reproduces that file's directives. Entries are permanent: a release
+# leaving support does not remove its data.
+#
+# Each entry has the shape of the class parameter: module options at the top
+# level and, under config_options, every directive of the manual in its
+# order, holding the stock value where that release's file sets it and the
+# empty value ([] / "" / false, meaning "not in the file") where it does not.
+# All entries have the same fields, so every lookup in the class below reads
+# the same way: the consumer's value, else this release's.
+#
+# The binding is typed so that an empty list in a row has an element type; a
+# bare [] in a struct literal is otherwise ambiguous to mgmt 1.1.0. The type
+# is one long line because the 1.1.0 parser does not allow a newline inside a
+# type; it lists the three module options and then every directive in the
+# manual's order, the same order as the rows below.
+#
+# The last row, "unsupported", is not a release: it is the all-empty value the
+# lookup falls back to for a release that has no row, so that the panic in the
+# class can report it. Keep it last and keep it empty.
+$platforms map{str: struct{package str; config_file str; service str; config_options struct{server []str; pool []str; peer []str; initstepslew str; refclock []str; manual bool; acquisitionport str; bindacqaddress []str; bindacqdevice str; dscp str; dumpdir str; maxsamples str; minsamples str; ntsaeads str; ntsdumpdir str; ntsrefresh str; ntstrustedcerts []str; nosystemcert bool; nocerttimecheck str; refresh str; authselectmode str; combinelimit str; maxdistance str; maxjitter str; maxstratum str; minstratum str; minsources str; reselectdist str; stratumweight str; clockprecision str; corrtimeratio str; driftfile str; fallbackdrift str; leapsecmode str; leapsectz str; leapseclist str; makestep str; maxchange str; maxclockerror str; maxdrift str; maxupdateskew str; maxslewrate str; allow []str; deny []str; bindaddress []str; binddevice str; broadcast []str; clientloglimit str; noclientlog bool; local str; ntpsigndsocket str; ntsport str; ntsservercert str; ntsserverkey str; ntsprocesses str; maxntsconnections str; ntsntpserver str; ntsrotate str; port str; ratelimit str; ntsratelimit str; smoothtime str; bindcmdaddress []str; bindcmddevice str; cmdallow []str; cmddeny []str; cmdport str; cmdratelimit str; opencommands str; hwclockfile str; rtcautotrim str; rtcdevice str; rtcfile str; rtconutc bool; rtcsync bool; log str; logbanner str; logchange str; logdir str; mailonchange str; sourcedir []str; hwtimestamp []str; hwtstimeout str; maxtxbuffers str; keyfile str; lock_all bool; pidfile str; ptpport str; ptpdomain str; sched_priority str; user str; confdir []str; includes []str}}} = {
+	# chrony-4.9-1.fc44: /etc/chrony.conf
+	"fedora-44" => struct{
+		package => "chrony",
+		config_file => "/etc/chrony.conf",
+		service => "chronyd",
+		config_options => struct{
+			# Time sources
+			server => [],
+			pool => ["2.fedora.pool.ntp.org iburst"],
+			peer => [],
+			initstepslew => "",
+			refclock => [],
+			manual => false,
+			acquisitionport => "",
+			bindacqaddress => [],
+			bindacqdevice => "",
+			dscp => "",
+			dumpdir => "",
+			maxsamples => "",
+			minsamples => "",
+			ntsaeads => "",
+			ntsdumpdir => "/var/lib/chrony",
+			ntsrefresh => "",
+			ntstrustedcerts => [],
+			nosystemcert => false,
+			nocerttimecheck => "",
+			refresh => "",
+			# Source selection
+			authselectmode => "",
+			combinelimit => "",
+			maxdistance => "",
+			maxjitter => "",
+			maxstratum => "",
+			minstratum => "",
+			minsources => "",
+			reselectdist => "",
+			stratumweight => "",
+			# System clock
+			clockprecision => "",
+			corrtimeratio => "",
+			driftfile => "/var/lib/chrony/drift",
+			fallbackdrift => "",
+			leapsecmode => "",
+			leapsectz => "",
+			leapseclist => "/usr/share/zoneinfo/leap-seconds.list",
+			makestep => "1.0 3",
+			maxchange => "",
+			maxclockerror => "",
+			maxdrift => "",
+			maxupdateskew => "",
+			maxslewrate => "",
+			# NTP server
+			allow => [],
+			deny => [],
+			bindaddress => [],
+			binddevice => "",
+			broadcast => [],
+			clientloglimit => "",
+			noclientlog => false,
+			local => "",
+			ntpsigndsocket => "",
+			ntsport => "",
+			ntsservercert => "",
+			ntsserverkey => "",
+			ntsprocesses => "",
+			maxntsconnections => "",
+			ntsntpserver => "",
+			ntsrotate => "",
+			port => "",
+			ratelimit => "",
+			ntsratelimit => "",
+			smoothtime => "",
+			# Command and monitoring access
+			bindcmdaddress => [],
+			bindcmddevice => "",
+			cmdallow => [],
+			cmddeny => [],
+			cmdport => "",
+			cmdratelimit => "",
+			opencommands => "",
+			# Real-time clock (RTC)
+			hwclockfile => "",
+			rtcautotrim => "",
+			rtcdevice => "",
+			rtcfile => "",
+			rtconutc => false,
+			rtcsync => true,
+			# Logging
+			log => "",
+			logbanner => "",
+			logchange => "",
+			logdir => "/var/log/chrony",
+			mailonchange => "",
+			# Miscellaneous
+			sourcedir => ["/run/chrony-dhcp"],
+			hwtimestamp => [],
+			hwtstimeout => "",
+			maxtxbuffers => "",
+			keyfile => "",
+			lock_all => false,
+			pidfile => "",
+			ptpport => "",
+			ptpdomain => "",
+			sched_priority => "",
+			user => "",
+			# Included files
+			confdir => [],
+			includes => [],
+		},
+	},
+	# not a release: the fallback for a release without a row
+	"unsupported" => struct{
+		package => "",
+		config_file => "",
+		service => "",
+		config_options => struct{
+			# Time sources
+			server => [],
+			pool => [],
+			peer => [],
+			initstepslew => "",
+			refclock => [],
+			manual => false,
+			acquisitionport => "",
+			bindacqaddress => [],
+			bindacqdevice => "",
+			dscp => "",
+			dumpdir => "",
+			maxsamples => "",
+			minsamples => "",
+			ntsaeads => "",
+			ntsdumpdir => "",
+			ntsrefresh => "",
+			ntstrustedcerts => [],
+			nosystemcert => false,
+			nocerttimecheck => "",
+			refresh => "",
+			# Source selection
+			authselectmode => "",
+			combinelimit => "",
+			maxdistance => "",
+			maxjitter => "",
+			maxstratum => "",
+			minstratum => "",
+			minsources => "",
+			reselectdist => "",
+			stratumweight => "",
+			# System clock
+			clockprecision => "",
+			corrtimeratio => "",
+			driftfile => "",
+			fallbackdrift => "",
+			leapsecmode => "",
+			leapsectz => "",
+			leapseclist => "",
+			makestep => "",
+			maxchange => "",
+			maxclockerror => "",
+			maxdrift => "",
+			maxupdateskew => "",
+			maxslewrate => "",
+			# NTP server
+			allow => [],
+			deny => [],
+			bindaddress => [],
+			binddevice => "",
+			broadcast => [],
+			clientloglimit => "",
+			noclientlog => false,
+			local => "",
+			ntpsigndsocket => "",
+			ntsport => "",
+			ntsservercert => "",
+			ntsserverkey => "",
+			ntsprocesses => "",
+			maxntsconnections => "",
+			ntsntpserver => "",
+			ntsrotate => "",
+			port => "",
+			ratelimit => "",
+			ntsratelimit => "",
+			smoothtime => "",
+			# Command and monitoring access
+			bindcmdaddress => [],
+			bindcmddevice => "",
+			cmdallow => [],
+			cmddeny => [],
+			cmdport => "",
+			cmdratelimit => "",
+			opencommands => "",
+			# Real-time clock (RTC)
+			hwclockfile => "",
+			rtcautotrim => "",
+			rtcdevice => "",
+			rtcfile => "",
+			rtconutc => false,
+			rtcsync => false,
+			# Logging
+			log => "",
+			logbanner => "",
+			logchange => "",
+			logdir => "",
+			mailonchange => "",
+			# Miscellaneous
+			sourcedir => [],
+			hwtimestamp => [],
+			hwtstimeout => "",
+			maxtxbuffers => "",
+			keyfile => "",
+			lock_all => false,
+			pidfile => "",
+			ptpport => "",
+			ptpdomain => "",
+			sched_priority => "",
+			user => "",
+			# Included files
+			confdir => [],
+			includes => [],
+		},
+	},
+}
+
+class client($st) {
+	$release = os.release()
+	$id = $release->id
+	$version = $release->version_id
+	$key = "${id}-${version}"
+
+	# Look up this release's entry in $platforms. This is the module's own
+	# data, not the consumer's struct: everything a consumer passes stays
+	# optional, see the defaults below. A map lookup needs a value even when
+	# the key is missing, so it falls back to the all-empty "unsupported"
+	# row, and the panic right after it fires on the empty service name.
+	$platform struct{package str; config_file str; service str; config_options struct{server []str; pool []str; peer []str; initstepslew str; refclock []str; manual bool; acquisitionport str; bindacqaddress []str; bindacqdevice str; dscp str; dumpdir str; maxsamples str; minsamples str; ntsaeads str; ntsdumpdir str; ntsrefresh str; ntstrustedcerts []str; nosystemcert bool; nocerttimecheck str; refresh str; authselectmode str; combinelimit str; maxdistance str; maxjitter str; maxstratum str; minstratum str; minsources str; reselectdist str; stratumweight str; clockprecision str; corrtimeratio str; driftfile str; fallbackdrift str; leapsecmode str; leapsectz str; leapseclist str; makestep str; maxchange str; maxclockerror str; maxdrift str; maxupdateskew str; maxslewrate str; allow []str; deny []str; bindaddress []str; binddevice str; broadcast []str; clientloglimit str; noclientlog bool; local str; ntpsigndsocket str; ntsport str; ntsservercert str; ntsserverkey str; ntsprocesses str; maxntsconnections str; ntsntpserver str; ntsrotate str; port str; ratelimit str; ntsratelimit str; smoothtime str; bindcmdaddress []str; bindcmddevice str; cmdallow []str; cmddeny []str; cmdport str; cmdratelimit str; opencommands str; hwclockfile str; rtcautotrim str; rtcdevice str; rtcfile str; rtconutc bool; rtcsync bool; log str; logbanner str; logchange str; logdir str; mailonchange str; sourcedir []str; hwtimestamp []str; hwtstimeout str; maxtxbuffers str; keyfile str; lock_all bool; pidfile str; ptpport str; ptpdomain str; sched_priority str; user str; confdir []str; includes []str}} = $platforms[$key] || $platforms["unsupported"]
+	panic($platform->service == "", "mgmt-chrony: unsupported os release: '${key}'")
+	$stock = $platform->config_options	# this release's stock directives
+
+	# Module options: the resources this module manages and how. Names come
+	# from the release data. The state values are mgmt's: pkg state is
+	# installed, uninstalled, newest or a version string; svc state is running
+	# or stopped and startup is enabled or disabled. retry/delay are the
+	# service resource's Meta params (-1 retries forever, delay is in ms).
+	$package str = $st->package || $platform->package
+	$package_state str = $st->package_state || "installed"
+	$config_file str = $st->config_file || $platform->config_file
+	$config_file_owner str = $st->config_file_owner || "root"
+	$config_file_group str = $st->config_file_group || "root"
+	$config_file_mode str = $st->config_file_mode || "0644"
+	$service str = $st->service || $platform->service
+	$service_state str = $st->service_state || "running"
+	$service_startup str = $st->service_startup || "enabled"
+	$retry int = $st->retry || -1
+	$delay int = $st->delay || 1000
+
+	# Directives, one per chrony.conf(5) directive, in the manual's order: the
+	# consumer's value if the field is present, else this release's stock
+	# value, which is the empty value for a directive the stock file does not
+	# set. A missing struct field is resolved at compile time. Note that the
+	# type of $st is inferred from what the consumer passes, so a misspelled
+	# field is not an error: it is ignored and the default applies.
+
+	# Time sources
+	$server []str = $st->config_options->server || $stock->server
+	$pool []str = $st->config_options->pool || $stock->pool
+	$peer []str = $st->config_options->peer || $stock->peer
+	$initstepslew str = $st->config_options->initstepslew || $stock->initstepslew
+	$refclock []str = $st->config_options->refclock || $stock->refclock
+	$manual bool = $st->config_options->manual || $stock->manual
+	$acquisitionport str = $st->config_options->acquisitionport || $stock->acquisitionport
+	$bindacqaddress []str = $st->config_options->bindacqaddress || $stock->bindacqaddress
+	$bindacqdevice str = $st->config_options->bindacqdevice || $stock->bindacqdevice
+	$dscp str = $st->config_options->dscp || $stock->dscp
+	$dumpdir str = $st->config_options->dumpdir || $stock->dumpdir
+	$maxsamples str = $st->config_options->maxsamples || $stock->maxsamples
+	$minsamples str = $st->config_options->minsamples || $stock->minsamples
+	$ntsaeads str = $st->config_options->ntsaeads || $stock->ntsaeads
+	$ntsdumpdir str = $st->config_options->ntsdumpdir || $stock->ntsdumpdir
+	$ntsrefresh str = $st->config_options->ntsrefresh || $stock->ntsrefresh
+	$ntstrustedcerts []str = $st->config_options->ntstrustedcerts || $stock->ntstrustedcerts
+	$nosystemcert bool = $st->config_options->nosystemcert || $stock->nosystemcert
+	$nocerttimecheck str = $st->config_options->nocerttimecheck || $stock->nocerttimecheck
+	$refresh str = $st->config_options->refresh || $stock->refresh
+
+	# Source selection
+	$authselectmode str = $st->config_options->authselectmode || $stock->authselectmode
+	$combinelimit str = $st->config_options->combinelimit || $stock->combinelimit
+	$maxdistance str = $st->config_options->maxdistance || $stock->maxdistance
+	$maxjitter str = $st->config_options->maxjitter || $stock->maxjitter
+	$maxstratum str = $st->config_options->maxstratum || $stock->maxstratum
+	$minstratum str = $st->config_options->minstratum || $stock->minstratum
+	$minsources str = $st->config_options->minsources || $stock->minsources
+	$reselectdist str = $st->config_options->reselectdist || $stock->reselectdist
+	$stratumweight str = $st->config_options->stratumweight || $stock->stratumweight
+
+	# System clock
+	$clockprecision str = $st->config_options->clockprecision || $stock->clockprecision
+	$corrtimeratio str = $st->config_options->corrtimeratio || $stock->corrtimeratio
+	$driftfile str = $st->config_options->driftfile || $stock->driftfile
+	$fallbackdrift str = $st->config_options->fallbackdrift || $stock->fallbackdrift
+	$leapsecmode str = $st->config_options->leapsecmode || $stock->leapsecmode
+	$leapsectz str = $st->config_options->leapsectz || $stock->leapsectz
+	$leapseclist str = $st->config_options->leapseclist || $stock->leapseclist
+	$makestep str = $st->config_options->makestep || $stock->makestep
+	$maxchange str = $st->config_options->maxchange || $stock->maxchange
+	$maxclockerror str = $st->config_options->maxclockerror || $stock->maxclockerror
+	$maxdrift str = $st->config_options->maxdrift || $stock->maxdrift
+	$maxupdateskew str = $st->config_options->maxupdateskew || $stock->maxupdateskew
+	$maxslewrate str = $st->config_options->maxslewrate || $stock->maxslewrate
+
+	# NTP server
+	$allow []str = $st->config_options->allow || $stock->allow
+	$deny []str = $st->config_options->deny || $stock->deny
+	$bindaddress []str = $st->config_options->bindaddress || $stock->bindaddress
+	$binddevice str = $st->config_options->binddevice || $stock->binddevice
+	$broadcast []str = $st->config_options->broadcast || $stock->broadcast
+	$clientloglimit str = $st->config_options->clientloglimit || $stock->clientloglimit
+	$noclientlog bool = $st->config_options->noclientlog || $stock->noclientlog
+	$local str = $st->config_options->local || $stock->local
+	$ntpsigndsocket str = $st->config_options->ntpsigndsocket || $stock->ntpsigndsocket
+	$ntsport str = $st->config_options->ntsport || $stock->ntsport
+	$ntsservercert str = $st->config_options->ntsservercert || $stock->ntsservercert
+	$ntsserverkey str = $st->config_options->ntsserverkey || $stock->ntsserverkey
+	$ntsprocesses str = $st->config_options->ntsprocesses || $stock->ntsprocesses
+	$maxntsconnections str = $st->config_options->maxntsconnections || $stock->maxntsconnections
+	$ntsntpserver str = $st->config_options->ntsntpserver || $stock->ntsntpserver
+	$ntsrotate str = $st->config_options->ntsrotate || $stock->ntsrotate
+	$port str = $st->config_options->port || $stock->port
+	$ratelimit str = $st->config_options->ratelimit || $stock->ratelimit
+	$ntsratelimit str = $st->config_options->ntsratelimit || $stock->ntsratelimit
+	$smoothtime str = $st->config_options->smoothtime || $stock->smoothtime
+
+	# Command and monitoring access
+	$bindcmdaddress []str = $st->config_options->bindcmdaddress || $stock->bindcmdaddress
+	$bindcmddevice str = $st->config_options->bindcmddevice || $stock->bindcmddevice
+	$cmdallow []str = $st->config_options->cmdallow || $stock->cmdallow
+	$cmddeny []str = $st->config_options->cmddeny || $stock->cmddeny
+	$cmdport str = $st->config_options->cmdport || $stock->cmdport
+	$cmdratelimit str = $st->config_options->cmdratelimit || $stock->cmdratelimit
+	$opencommands str = $st->config_options->opencommands || $stock->opencommands
+
+	# Real-time clock (RTC)
+	$hwclockfile str = $st->config_options->hwclockfile || $stock->hwclockfile
+	$rtcautotrim str = $st->config_options->rtcautotrim || $stock->rtcautotrim
+	$rtcdevice str = $st->config_options->rtcdevice || $stock->rtcdevice
+	$rtcfile str = $st->config_options->rtcfile || $stock->rtcfile
+	$rtconutc bool = $st->config_options->rtconutc || $stock->rtconutc
+	$rtcsync bool = $st->config_options->rtcsync || $stock->rtcsync
+
+	# Logging
+	$log str = $st->config_options->log || $stock->log
+	$logbanner str = $st->config_options->logbanner || $stock->logbanner
+	$logchange str = $st->config_options->logchange || $stock->logchange
+	$logdir str = $st->config_options->logdir || $stock->logdir
+	$mailonchange str = $st->config_options->mailonchange || $stock->mailonchange
+
+	# Miscellaneous
+	$sourcedir []str = $st->config_options->sourcedir || $stock->sourcedir
+	$hwtimestamp []str = $st->config_options->hwtimestamp || $stock->hwtimestamp
+	$hwtstimeout str = $st->config_options->hwtstimeout || $stock->hwtstimeout
+	$maxtxbuffers str = $st->config_options->maxtxbuffers || $stock->maxtxbuffers
+	$keyfile str = $st->config_options->keyfile || $stock->keyfile
+	$lock_all bool = $st->config_options->lock_all || $stock->lock_all
+	$pidfile str = $st->config_options->pidfile || $stock->pidfile
+	$ptpport str = $st->config_options->ptpport || $stock->ptpport
+	$ptpdomain str = $st->config_options->ptpdomain || $stock->ptpdomain
+	$sched_priority str = $st->config_options->sched_priority || $stock->sched_priority
+	$user str = $st->config_options->user || $stock->user
+
+	# Included files
+	$confdir []str = $st->config_options->confdir || $stock->confdir
+	$includes []str = $st->config_options->includes || $stock->includes
+
+	# Anything not above: directive name => arguments ("" for none). Rendered
+	# after the directives above, sorted by name, before confdir and include.
+	$custom map{str: str} = $st->config_options->custom || {}
+
+	# Field names become capitalized in the template: .Pool, .Lock_all.
+	$tmpl = struct{
+		server => $server,
+		pool => $pool,
+		peer => $peer,
+		initstepslew => $initstepslew,
+		refclock => $refclock,
+		manual => $manual,
+		acquisitionport => $acquisitionport,
+		bindacqaddress => $bindacqaddress,
+		bindacqdevice => $bindacqdevice,
+		dscp => $dscp,
+		dumpdir => $dumpdir,
+		maxsamples => $maxsamples,
+		minsamples => $minsamples,
+		ntsaeads => $ntsaeads,
+		ntsdumpdir => $ntsdumpdir,
+		ntsrefresh => $ntsrefresh,
+		ntstrustedcerts => $ntstrustedcerts,
+		nosystemcert => $nosystemcert,
+		nocerttimecheck => $nocerttimecheck,
+		refresh => $refresh,
+		authselectmode => $authselectmode,
+		combinelimit => $combinelimit,
+		maxdistance => $maxdistance,
+		maxjitter => $maxjitter,
+		maxstratum => $maxstratum,
+		minstratum => $minstratum,
+		minsources => $minsources,
+		reselectdist => $reselectdist,
+		stratumweight => $stratumweight,
+		clockprecision => $clockprecision,
+		corrtimeratio => $corrtimeratio,
+		driftfile => $driftfile,
+		fallbackdrift => $fallbackdrift,
+		leapsecmode => $leapsecmode,
+		leapsectz => $leapsectz,
+		leapseclist => $leapseclist,
+		makestep => $makestep,
+		maxchange => $maxchange,
+		maxclockerror => $maxclockerror,
+		maxdrift => $maxdrift,
+		maxupdateskew => $maxupdateskew,
+		maxslewrate => $maxslewrate,
+		allow => $allow,
+		deny => $deny,
+		bindaddress => $bindaddress,
+		binddevice => $binddevice,
+		broadcast => $broadcast,
+		clientloglimit => $clientloglimit,
+		noclientlog => $noclientlog,
+		local => $local,
+		ntpsigndsocket => $ntpsigndsocket,
+		ntsport => $ntsport,
+		ntsservercert => $ntsservercert,
+		ntsserverkey => $ntsserverkey,
+		ntsprocesses => $ntsprocesses,
+		maxntsconnections => $maxntsconnections,
+		ntsntpserver => $ntsntpserver,
+		ntsrotate => $ntsrotate,
+		port => $port,
+		ratelimit => $ratelimit,
+		ntsratelimit => $ntsratelimit,
+		smoothtime => $smoothtime,
+		bindcmdaddress => $bindcmdaddress,
+		bindcmddevice => $bindcmddevice,
+		cmdallow => $cmdallow,
+		cmddeny => $cmddeny,
+		cmdport => $cmdport,
+		cmdratelimit => $cmdratelimit,
+		opencommands => $opencommands,
+		hwclockfile => $hwclockfile,
+		rtcautotrim => $rtcautotrim,
+		rtcdevice => $rtcdevice,
+		rtcfile => $rtcfile,
+		rtconutc => $rtconutc,
+		rtcsync => $rtcsync,
+		log => $log,
+		logbanner => $logbanner,
+		logchange => $logchange,
+		logdir => $logdir,
+		mailonchange => $mailonchange,
+		sourcedir => $sourcedir,
+		hwtimestamp => $hwtimestamp,
+		hwtstimeout => $hwtstimeout,
+		maxtxbuffers => $maxtxbuffers,
+		keyfile => $keyfile,
+		lock_all => $lock_all,
+		pidfile => $pidfile,
+		ptpport => $ptpport,
+		ptpdomain => $ptpdomain,
+		sched_priority => $sched_priority,
+		user => $user,
+		confdir => $confdir,
+		includes => $includes,
+		custom => $custom,
+	}
+
+	# Package[$package] { ensure => $package_state }. The resource name is the
+	# package name; pkg has no separate name parameter.
+	pkg "${package}" {
+		state => $package_state,
+	}
+
+	# File['chrony_config'] { path => $config_file, content => template(...) }
+	# A static resource name, so that other code can refer to
+	# File["chrony_config"] whatever the path is on this release.
+	file "chrony_config" {
+		path => $config_file,
+		state => $const.res.file.state.exists,
+		content => golang.template(deploy.readfile("/files/chrony.conf.tmpl"), $tmpl),
+		owner => $config_file_owner,
+		group => $config_file_group,
+		mode => $config_file_mode,
+
+		Depend => Pkg["${package}"],
+		Notify => Svc["${service}"],
+	}
+
+	# Service[$service] { ensure => $service_state, enable => $service_startup }
+	# By default retry forever so that a transiently missing unit (for example
+	# while the package is being reinstalled) does not leave the service down
+	# for good. Note that a config chronyd rejects then also retries forever.
+	svc "${service}" {
+		state => $service_state,
+		startup => $service_startup,
+
+		Meta:retry => $retry,
+		Meta:delay => $delay,
+	}
+}

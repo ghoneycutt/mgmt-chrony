@@ -1,0 +1,47 @@
+import "https://github.com/ghoneycutt/mgmt-chrony/"
+
+# An empty list literal has no element type, so `pool => []` is ambiguous on
+# mgmt 1.1.0. Bind a typed variable and pass that: one variable per field,
+# because passing the same variable in two fields of a struct stalls the
+# mgmt 1.1.0 function engine (it converges without ever building a graph).
+$no_pools []str = []
+$no_dirs []str = []
+
+# Module options with their default values, so they compile and render the
+# same file, plus one of each directive shape: lists (pool emptied, server,
+# allow, includes), strings (makestep, local, logdir), flags (rtcsync off,
+# noclientlog on), and custom entries with and without arguments. Only real
+# chrony directives, since the functional test starts chronyd with the
+# result. `includes` renders the `include` directive; `include` itself is a
+# reserved word in mcl.
+include chrony.client(struct{
+	package => "chrony",
+	package_state => "installed",
+	config_file => "/etc/chrony.conf",
+	config_file_owner => "root",
+	config_file_group => "root",
+	config_file_mode => "0644",
+	service => "chronyd",
+	service_state => "running",
+	service_startup => "enabled",
+	retry => 3,
+	delay => 500,
+	config_options => struct{
+		pool => $no_pools,
+		server => ["a.example.org iburst", "b.example.org"],
+		sourcedir => $no_dirs,
+		makestep => "0.5 5",
+		rtcsync => false,
+		logdir => "/var/log/chrony",
+		allow => ["192.0.2.0/24"],
+		local => "stratum 10",
+		noclientlog => true,
+		# chronyd refuses to start if the pattern's directory does not
+		# exist, so use one that does on every supported release.
+		includes => ["/var/lib/chrony/*.conf"],
+		custom => {
+			"maxslewrate" => "1000",
+			"rtconutc" => "",
+		},
+	},
+})

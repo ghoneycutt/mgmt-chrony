@@ -1,0 +1,14 @@
+# This file is managed by mgmt. Do not edit.
+server a.example.org iburst
+server b.example.org
+ntsdumpdir /var/lib/chrony
+driftfile /var/lib/chrony/drift
+leapseclist /usr/share/zoneinfo/leap-seconds.list
+makestep 0.5 5
+allow 192.0.2.0/24
+noclientlog
+local stratum 10
+logdir /var/log/chrony
+maxslewrate 1000
+rtconutc
+include /var/lib/chrony/*.conf

@@ -1,0 +1,11 @@
+import "https://github.com/ghoneycutt/mgmt-chrony/"
+
+# The stock client configuration plus serving time to localhost. `local`
+# lets chronyd answer even before it has synchronised, so the functional
+# test can query it.
+include chrony.client(struct{
+	config_options => struct{
+		allow => ["127.0.0.1"],
+		local => "stratum 10",
+	},
+})

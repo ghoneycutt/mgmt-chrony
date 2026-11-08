@@ -1,0 +1,23 @@
+# A site that consumes mgmt-chrony and adds its own time servers to the
+# distribution's pool.
+#
+# The module is imported by its repository, as any consumer would do; the
+# mgmt- prefix is dropped to form the implied alias, chrony. Remote imports are
+# cloned into the module path on first use, so run this with:
+#
+#	mkdir -p /tmp/modules
+#	mgmt run --tmp-prefix lang --module-path /tmp/modules/ --download examples/chrony.mcl
+#
+# The module path must be an absolute directory whose last component is named
+# modules/ (any other name compiles, then fails at run time with "metadata.yaml
+# does not exist" under /modules/).
+import "https://github.com/ghoneycutt/mgmt-chrony/"
+
+# config_options holds the chrony.conf directives, named as in the manual.
+# Each `server` element is a complete server line without the keyword, so the
+# options are whatever chrony.conf(5) allows.
+include chrony.client(struct{
+	config_options => struct{
+		server => ["time.cloudflare.com iburst", "time.nist.gov iburst"],
+	},
+})

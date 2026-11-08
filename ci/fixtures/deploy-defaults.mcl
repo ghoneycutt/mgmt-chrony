@@ -1,0 +1,8 @@
+import "https://github.com/ghoneycutt/mgmt-chrony/"
+
+# config_options must be passed; a typed empty struct gives the defaults.
+$defaults struct{} = struct{}
+
+include chrony.client(struct{
+	config_options => $defaults,
+})
